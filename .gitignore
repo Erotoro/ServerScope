@@ -1,0 +1,5 @@
+/.m2/repository/
+**/target/
+/ServerScope-*.jar
+/docs/
+*.log

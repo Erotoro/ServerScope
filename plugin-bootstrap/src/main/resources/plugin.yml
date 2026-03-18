@@ -1,0 +1,39 @@
+name: ServerScope
+version: ${project.version}
+main: com.serverscope.bootstrap.ServerScopePlugin
+api-version: "1.21"
+folia-supported: true
+authors:
+  - Erotoro
+description: Lightweight observability and diagnostics plugin for Paper/Folia servers
+commands:
+  serverscope:
+    description: ServerScope admin command
+    usage: /serverscope [status|reload|report|findings|alerts|web regenerate-token]
+    permission: serverscope.admin
+    aliases: [sscope]
+permissions:
+  serverscope.admin:
+    description: Access to all ServerScope admin commands
+    default: op
+  serverscope.command.status:
+    description: Use /serverscope status
+    default: op
+  serverscope.command.reload:
+    description: Use /serverscope reload
+    default: op
+  serverscope.command.report:
+    description: Use /serverscope report
+    default: op
+  serverscope.command.findings:
+    description: Use /serverscope findings
+    default: op
+  serverscope.command.alerts:
+    description: Use /serverscope alerts
+    default: op
+  serverscope.command.web:
+    description: Use /serverscope web regenerate-token
+    default: op
+  serverscope.alerts:
+    description: Receive in-game alert notifications
+    default: op
