@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ServerScope Dashboard</title>
+    <link rel="stylesheet" href="/assets/app.css">
+</head>
+<body>
+<div class="shell">
+    <aside class="sidebar">
+        <div class="brand">
+            <p class="eyebrow" id="brandEyebrow">ServerScope MVP</p>
+            <h1 id="brandTitle">Diagnostics</h1>
+            <p class="subtle" id="brandSubtitle">Lightweight observability for Paper and Folia servers</p>
+        </div>
+
+        <div class="auth-card">
+            <label class="field-label" for="tokenInput" id="tokenLabel">API token</label>
+            <input id="tokenInput" type="password" placeholder="Enter token">
+            <div class="auth-actions">
+                <button id="saveTokenButton" type="button">Save</button>
+                <button id="clearTokenButton" type="button" class="ghost">Clear</button>
+            </div>
+        </div>
+
+        <div class="auth-card">
+            <label class="field-label" for="localeSelect" id="localeLabel">Language</label>
+            <select id="localeSelect">
+                <option value="en">English</option>
+                <option value="ru">Русский</option>
+                <option value="uk">Українська</option>
+            </select>
+        </div>
+
+        <nav class="nav">
+            <button class="nav-link active" data-page="overview">Overview</button>
+            <button class="nav-link" data-page="metrics">Metrics</button>
+            <button class="nav-link" data-page="worlds">Worlds and Chunks</button>
+            <button class="nav-link" data-page="profiling">Profiling</button>
+            <button class="nav-link" data-page="findings">Findings and Alerts</button>
+        </nav>
+
+        <div class="status-card">
+            <div class="status-row">
+                <span id="statusLabel">Status</span>
+                <span id="connectionState" class="status-pill idle">Waiting</span>
+            </div>
+            <div class="status-row">
+                <span id="refreshLabel">Refresh</span>
+                <span id="refreshState">5s polling</span>
+            </div>
+            <div class="status-row">
+                <span id="lastUpdateLabel">Last update</span>
+                <span id="lastUpdated">Never</span>
+            </div>
+        </div>
+    </aside>
+
+    <main class="content">
+        <header class="content-header">
+            <div>
+                <p class="eyebrow" id="pageEyebrow">Overview</p>
+                <h2 id="pageTitle">Server overview</h2>
+            </div>
+            <p id="globalMessage" class="subtle">Using embedded ServerScope API</p>
+        </header>
+
+        <section class="page active" data-page="overview">
+            <div id="overviewCards" class="cards"></div>
+
+            <div class="grid two">
+                <section class="panel">
+                    <div class="panel-header">
+                        <h3 id="overviewHealthTitle">Server Health</h3>
+                        <p id="overviewHealthSubtitle">Current point-in-time snapshot</p>
+                    </div>
+                    <div id="overviewHealthBars" class="bar-list"></div>
+                </section>
+
+                <section class="panel">
+                    <div class="panel-header">
+                        <h3 id="overviewIssuesTitle">Active Issues</h3>
+                        <p id="overviewIssuesSubtitle">Most important current signals</p>
+                    </div>
+                    <div id="overviewIssues"></div>
+                </section>
+            </div>
+
+            <div class="grid two">
+                <section class="panel">
+                    <div class="panel-header">
+                        <h3 id="overviewSlowTitle">Top Slow Events</h3>
+                        <p id="overviewSlowSubtitle">Dispatch cost hotspots</p>
+                    </div>
+                    <div id="overviewSlowEvents"></div>
+                </section>
+
+                <section class="panel">
+                    <div class="panel-header">
+                        <h3 id="overviewBurstTitle">Suspicious Bursts</h3>
+                        <p id="overviewBurstSubtitle">Fast-rising event pressure</p>
+                    </div>
+                    <div id="overviewBurstEvents"></div>
+                </section>
+            </div>
+        </section>
+
+        <section class="page" data-page="metrics">
+            <div class="grid two">
+                <section class="panel">
+                    <div class="panel-header">
+                        <h3 id="metricsTitle">Server Metrics</h3>
+                        <p id="metricsSubtitle">Latest top-level metrics</p>
+                    </div>
+                    <div id="metricsBars" class="mini-chart"></div>
+                    <div id="metricsTable"></div>
+                </section>
+
+                <section class="panel">
+                    <div class="panel-header">
+                        <h3 id="collectorFeedTitle">Collector Feed</h3>
+                        <p id="collectorFeedSubtitle">Raw latest metric items</p>
+                    </div>
+                    <div id="metricFeedTable"></div>
+                </section>
+            </div>
+        </section>
+
+        <section class="page" data-page="worlds">
+            <div class="grid two">
+                <section class="panel">
+                    <div class="panel-header">
+                        <h3 id="worldsTitle">World Loaded Chunks</h3>
+                        <p id="worldsSubtitle">World-level chunk footprint</p>
+                    </div>
+                    <div id="worldsBars" class="bar-list"></div>
+                    <div id="worldsTable"></div>
+                </section>
+
+                <section class="panel">
+                    <div class="panel-header">
+                        <h3 id="chunksTitle">Chunk Hotspots</h3>
+                        <p id="chunksSubtitle">Highest-cost sampled chunks</p>
+                    </div>
+                    <div id="chunksHeat"></div>
+                    <div id="chunksTable"></div>
+                </section>
+            </div>
+        </section>
+
+        <section class="page" data-page="profiling">
+            <div class="grid two">
+                <section class="panel">
+                    <div class="panel-header">
+                        <h3 id="profilingPluginsTitle">Plugin Impact</h3>
+                        <p id="profilingPluginsSubtitle">Approximate attributed event cost</p>
+                    </div>
+                    <div id="profilingPluginsBars" class="bar-list"></div>
+                    <div id="profilingPluginsTable"></div>
+                </section>
+
+                <section class="panel">
+                    <div class="panel-header">
+                        <h3 id="profilingFrequentTitle">Frequent Events</h3>
+                        <p id="profilingFrequentSubtitle">Most active profiled events</p>
+                    </div>
+                    <div id="profilingFrequentTable"></div>
+                </section>
+            </div>
+
+            <div class="grid two">
+                <section class="panel">
+                    <div class="panel-header">
+                        <h3 id="profilingSlowTitle">Slow Events</h3>
+                        <p id="profilingSlowSubtitle">Highest average dispatch cost</p>
+                    </div>
+                    <div id="profilingSlowTable"></div>
+                </section>
+
+                <section class="panel">
+                    <div class="panel-header">
+                        <h3 id="profilingBurstTitle">Event Bursts</h3>
+                        <p id="profilingBurstSubtitle">Peak short-window pressure</p>
+                    </div>
+                    <div id="profilingBurstTable"></div>
+                </section>
+            </div>
+        </section>
+
+        <section class="page" data-page="findings">
+            <div class="grid two">
+                <section class="panel">
+                    <div class="panel-header">
+                        <h3 id="findingsTitle">Diagnostics</h3>
+                        <p id="findingsSubtitle">Rule-based findings for administrators</p>
+                    </div>
+                    <div id="findingsTable"></div>
+                </section>
+
+                <section class="panel">
+                    <div class="panel-header">
+                        <h3 id="alertsTitle">Alerts</h3>
+                        <p id="alertsSubtitle">Channel-aware notifications and history</p>
+                    </div>
+                    <div id="alertsTable"></div>
+                </section>
+            </div>
+        </section>
+    </main>
+</div>
+
+<script src="/assets/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,85 @@
+storage:
+  enabled: true
+  sqlite-file: serverscope-mvp.db
+  queue-capacity: 8192
+  max-batch-size: 512
+  flush-interval-millis: 1500
+
+collectors:
+  enabled: true
+  server:
+    tps-mspt-interval-millis: 1000
+    players-interval-millis: 2000
+    jvm-interval-millis: 5000
+    loaded-chunks-interval-millis: 10000
+    total-entities-interval-millis: 10000
+  world:
+    snapshot-interval-millis: 10000
+    chunk-sampling-interval-millis: 15000
+    max-chunks-per-run: 24
+
+web:
+  enabled: true
+  host: 127.0.0.1
+  port: 8080
+  auth-token: auto-generated-per-server
+  cors-enabled: false
+  cors-allowed-origin: http://127.0.0.1
+  reverse-proxy-enabled: false
+  max-requests-per-window: 120
+  rate-limit-window-millis: 10000
+  max-request-uri-length: 2048
+  max-response-bytes: 2097152
+
+alerts:
+  enabled: true
+  evaluation-interval-millis: 10000
+  cooldown-millis: 120000
+  rate-limit-millis: 15000
+  thresholds:
+    low-tps: 17.0
+    high-mspt: 65.0
+    high-entity-count: 3500
+    high-chunk-entity-count: 120
+    high-chunk-block-entity-count: 60
+    high-event-average-millis: 20.0
+  channels:
+    console-enabled: true
+    in-game-enabled: true
+    webhook-enabled: false
+    webhook-url: https://example.invalid/serverscope-webhook
+    admin-permission: serverscope.alerts
+
+localization:
+  default-locale: en
+  log-missing-translations: true
+
+retention:
+  enabled: true
+  metric-samples-days: 21
+  alerts-days: 21
+  profiling-days: 14
+  chunk-snapshots-days: 14
+
+debug:
+  enabled: false
+  verbose-logging: false
+  log-config-reloads: true
+
+profiling:
+  enabled: true
+  top-limit: 8
+  burst-window-millis: 15000
+  burst-minimum-count: 40
+  events:
+    - player_interact
+    - block_break
+    - block_place
+    - entity_damage
+    - inventory_click
+    - creature_spawn
+
+sampling:
+  skip-overlapping-chunk-sampling: true
+  default-max-chunks-per-run: 24
+  default-interval-millis: 7000
