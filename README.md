@@ -1,3 +1,8 @@
+![Platform](https://img.shields.io/badge/platform-Paper%20%7C%20Spigot%20%7C%20Folia-green.svg)
+![Java](https://img.shields.io/badge/java-21%2B-orange.svg)
+![Version minecraft](https://img.shields.io/badge/Version_Minecraft_1.21+-red.svg)
+[![Support me](https://img.shields.io/badge/Support%20me-Ko--fi-ff5f5f?style=for-the-badge&logo=ko-fi&logoColor=white)](https://ko-fi.com/erotoro)
+
 # ServerScope
 
 English and Russian user guide for the ServerScope Paper/Folia plugin.
