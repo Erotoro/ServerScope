@@ -954,3 +954,8 @@ Storage здесь:
    - `/serverscope alerts`
 
 Этого уже достаточно, чтобы начать пользоваться плагином.
+
+---
+
+Supported me - https://ko-fi.com/erotoro
+Thx <3
