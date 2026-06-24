@@ -1,7 +1,7 @@
 name: ServerScope
 version: ${project.version}
 main: com.serverscope.bootstrap.ServerScopePlugin
-api-version: "1.21"
+api-version: "1.18"
 folia-supported: true
 authors:
   - Erotoro

@@ -10,7 +10,7 @@
 <div class="shell">
     <aside class="sidebar">
         <div class="brand">
-            <p class="eyebrow" id="brandEyebrow">ServerScope MVP</p>
+            <p class="eyebrow" id="brandEyebrow">ServerScope</p>
             <h1 id="brandTitle">Diagnostics</h1>
             <p class="subtle" id="brandSubtitle">Lightweight observability for Paper and Folia servers</p>
         </div>
@@ -36,6 +36,7 @@
         <nav class="nav">
             <button class="nav-link active" data-page="overview">Overview</button>
             <button class="nav-link" data-page="metrics">Metrics</button>
+            <button class="nav-link" data-page="history">History</button>
             <button class="nav-link" data-page="worlds">Worlds and Chunks</button>
             <button class="nav-link" data-page="profiling">Profiling</button>
             <button class="nav-link" data-page="findings">Findings and Alerts</button>
@@ -58,6 +59,7 @@
     </aside>
 
     <main class="content">
+        <div id="loadingBar" class="loading-bar" aria-hidden="true"></div>
         <header class="content-header">
             <div>
                 <p class="eyebrow" id="pageEyebrow">Overview</p>
@@ -125,6 +127,40 @@
                     <div id="metricFeedTable"></div>
                 </section>
             </div>
+        </section>
+
+        <section class="page" data-page="history">
+            <section class="panel">
+                <div class="panel-header history-header">
+                    <div>
+                        <h3 id="historyPerfTitle">Performance Over Time</h3>
+                        <p id="historyPerfSubtitle">TPS and MSPT trend from stored samples</p>
+                    </div>
+                    <label class="history-window">
+                        <span id="historyWindowLabel">Window</span>
+                        <select id="historyWindow">
+                            <option value="15">15m</option>
+                            <option value="30" selected>30m</option>
+                            <option value="60">1h</option>
+                            <option value="180">3h</option>
+                            <option value="720">12h</option>
+                            <option value="1440">24h</option>
+                        </select>
+                    </label>
+                </div>
+                <div id="historyPerfSummary" class="history-summary"></div>
+                <div class="chart-canvas-wrap"><canvas id="historyPerfChart"></canvas></div>
+                <div class="chart-legend" id="historyPerfLegend"></div>
+            </section>
+
+            <section class="panel">
+                <div class="panel-header">
+                    <h3 id="historyLoadTitle">Load Over Time</h3>
+                    <p id="historyLoadSubtitle">Players, entities and loaded chunks</p>
+                </div>
+                <div class="chart-canvas-wrap"><canvas id="historyLoadChart"></canvas></div>
+                <div class="chart-legend" id="historyLoadLegend"></div>
+            </section>
         </section>
 
         <section class="page" data-page="worlds">
@@ -206,6 +242,14 @@
                     <div id="alertsTable"></div>
                 </section>
             </div>
+
+            <section class="panel">
+                <div class="panel-header">
+                    <h3 id="alertHistoryTitle">Alert History</h3>
+                    <p id="alertHistorySubtitle">Persisted alerts that survive restarts</p>
+                </div>
+                <div id="alertHistoryTable"></div>
+            </section>
         </section>
     </main>
 </div>

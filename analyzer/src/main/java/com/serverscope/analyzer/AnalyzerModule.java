@@ -15,6 +15,7 @@ import com.serverscope.analyzer.alert.ConsoleAlertNotifier;
 import com.serverscope.analyzer.alert.InGameAdminAlertNotifier;
 import com.serverscope.analyzer.alert.WebhookAlertNotifier;
 import com.serverscope.analyzer.diagnostic.DiagnosticEvaluationService;
+import com.serverscope.core.concurrent.NamedThreadFactory;
 import com.serverscope.core.i18n.TranslationService;
 import com.serverscope.core.lifecycle.AbstractManagedComponent;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -72,8 +73,8 @@ public final class AnalyzerModule extends AbstractManagedComponent implements Al
                 profilerSnapshotSupplier,
                 this.diagnosticEvaluationService::activeFindings
         );
-        this.executorService = Executors.newSingleThreadScheduledExecutor(runnable ->
-                Thread.ofPlatform().name("serverscope-analyzer").daemon(true).unstarted(runnable));
+        this.executorService = Executors.newSingleThreadScheduledExecutor(
+                NamedThreadFactory.daemon("serverscope-analyzer"));
     }
 
     @Override

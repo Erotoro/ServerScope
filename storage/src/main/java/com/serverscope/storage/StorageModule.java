@@ -151,6 +151,11 @@ public final class StorageModule extends AbstractManagedComponent implements Sto
     }
 
     @Override
+    public List<MetricSample> findMetricSamplesSince(java.time.Instant since, int limit) {
+        return delegate.findMetricSamplesSince(since, limit);
+    }
+
+    @Override
     public List<AlertRecord> findLatestAlerts(int limit) {
         return delegate.findLatestAlerts(limit);
     }

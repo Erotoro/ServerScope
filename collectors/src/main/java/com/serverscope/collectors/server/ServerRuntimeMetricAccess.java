@@ -19,20 +19,9 @@ public final class ServerRuntimeMetricAccess {
     }
 
     public static OptionalLong totalLoadedChunks(Server server) {
-        boolean folia = isFoliaRuntime(server);
-        long total = 0L;
-        for (org.bukkit.World world : server.getWorlds()) {
-            OptionalLong worldCount = loadedChunksForWorld(world);
-            if (worldCount.isPresent()) {
-                total += worldCount.getAsLong();
-                continue;
-            }
-            if (folia) {
-                return OptionalLong.empty();
-            }
-            total += world.getLoadedChunks().length;
-        }
-        return OptionalLong.of(total);
+        // O(1) counter path (Paper getChunkCount) is the primary, Folia-safe source.
+        // Iterating getLoadedChunks() is only safe on non-Folia main-thread execution.
+        return aggregateWorldCounts(server, "getChunkCount", world -> (long) world.getLoadedChunks().length);
     }
 
     public static OptionalLong loadedChunksForWorld(org.bukkit.World world) {
@@ -40,20 +29,47 @@ public final class ServerRuntimeMetricAccess {
     }
 
     public static OptionalLong totalEntities(Server server) {
+        // O(1) counter path (Paper getEntityCount) is the primary, Folia-safe source.
+        // Iterating getEntities() across worlds is unsafe under Folia region threading
+        // (regions do not share data), so it is only used as a non-Folia fallback.
+        return aggregateWorldCounts(server, "getEntityCount", world -> (long) world.getEntities().size());
+    }
+
+    /**
+     * Sums a per-world quantity across all worlds.
+     *
+     * <p>The {@code counterMethod} is a Paper O(1) counter read (e.g. {@code getEntityCount}); reading
+     * it is safe from any thread because it cannot corrupt region-owned data — at worst it returns a
+     * momentarily stale number, which is acceptable for a metric. When the counter is unavailable
+     * (legacy Spigot), {@code iterationFallback} is used, but only on non-Folia runtimes, because
+     * iterating world entity/chunk collections off the owning region thread is unsafe on Folia.
+     *
+     * @return the aggregate, or empty if no world could be measured at all
+     */
+    private static OptionalLong aggregateWorldCounts(
+            Server server,
+            String counterMethod,
+            java.util.function.ToLongFunction<org.bukkit.World> iterationFallback
+    ) {
         boolean folia = isFoliaRuntime(server);
         long total = 0L;
+        boolean measuredAny = false;
         for (org.bukkit.World world : server.getWorlds()) {
-            OptionalLong worldCount = invokeLong(world, "getEntityCount");
-            if (worldCount.isPresent()) {
-                total += worldCount.getAsLong();
+            OptionalLong counter = invokeLong(world, counterMethod);
+            if (counter.isPresent()) {
+                total += counter.getAsLong();
+                measuredAny = true;
                 continue;
             }
             if (folia) {
-                return OptionalLong.empty();
+                // No safe way to count this world without the O(1) counter; skip it rather
+                // than touching region-owned collections from the global scheduler thread.
+                continue;
             }
-            total += world.getEntities().size();
+            total += iterationFallback.applyAsLong(world);
+            measuredAny = true;
         }
-        return OptionalLong.of(total);
+        return measuredAny ? OptionalLong.of(total) : OptionalLong.empty();
     }
 
     private static OptionalLong invokeLong(Object target, String methodName) {

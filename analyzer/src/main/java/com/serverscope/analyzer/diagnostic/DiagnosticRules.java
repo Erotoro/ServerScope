@@ -231,8 +231,8 @@ public final class DiagnosticRules {
     }
 
     private static String correlationHint(RuleEvaluationContext context, ServerHealthSample current, TranslationService translations) {
-        if (!context.hotChunks().isEmpty() && context.hotChunks().getFirst().hotspotScore() > 0L) {
-            ChunkDiagnosticSample chunk = context.hotChunks().getFirst();
+        if (!context.hotChunks().isEmpty() && context.hotChunks().get(0).hotspotScore() > 0L) {
+            ChunkDiagnosticSample chunk = context.hotChunks().get(0);
             return translations.text("finding.server.health.tick_degradation.cause.chunk", args(
                     "chunkX", chunk.chunkX(),
                     "chunkZ", chunk.chunkZ(),
@@ -242,7 +242,7 @@ public final class DiagnosticRules {
             ));
         }
         if (context.profilerSnapshot() != null && !context.profilerSnapshot().topSuspiciousBursts().isEmpty()) {
-            EventProfileRecord burst = context.profilerSnapshot().topSuspiciousBursts().getFirst();
+            EventProfileRecord burst = context.profilerSnapshot().topSuspiciousBursts().get(0);
             return translations.text("finding.server.health.tick_degradation.cause.event_burst", args(
                     "eventId", burst.eventId(),
                     "maxWindowCount", burst.maxWindowCount()

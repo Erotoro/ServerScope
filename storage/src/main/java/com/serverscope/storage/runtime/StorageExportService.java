@@ -19,6 +19,7 @@ import com.serverscope.api.storage.ChunkSnapshot;
 import com.serverscope.api.storage.EventProfileSnapshot;
 import com.serverscope.api.storage.StorageService;
 import com.serverscope.api.storage.WorldSnapshot;
+import com.serverscope.core.concurrent.NamedThreadFactory;
 
 import java.time.Instant;
 import java.util.Comparator;
@@ -88,8 +89,8 @@ public final class StorageExportService {
             return;
         }
 
-        ScheduledExecutorService scheduledExecutor = Executors.newSingleThreadScheduledExecutor(runnable ->
-                Thread.ofPlatform().name("serverscope-storage-exporter").daemon(true).unstarted(runnable));
+        ScheduledExecutorService scheduledExecutor = Executors.newSingleThreadScheduledExecutor(
+                NamedThreadFactory.daemon("serverscope-storage-exporter"));
         scheduledExecutor.scheduleWithFixedDelay(
                 this::safeExportOnce,
                 config.flushIntervalMillis(),

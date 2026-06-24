@@ -1,17 +1,20 @@
 const state = {
-  token: "",
+  token: localStorage.getItem("serverscopeToken") || "",
   refreshMs: 5000,
   activePage: "overview",
+  historyMinutes: Number(localStorage.getItem("serverscopeHistoryMinutes")) || 30,
+  lastHistory: null,
   locale: normalizeLocale(localStorage.getItem("serverscopeLocale") || navigator.language || "en")
 };
 
 const i18n = {
   en: {
-    brandEyebrow: "ServerScope MVP",
+    brandEyebrow: "ServerScope",
     brandTitle: "Diagnostics",
     brandSubtitle: "Lightweight observability for Paper and Folia servers",
     navOverview: "Overview",
     navMetrics: "Metrics",
+    navHistory: "History",
     navWorlds: "Worlds and Chunks",
     navProfiling: "Profiling",
     navFindings: "Findings and Alerts",
@@ -19,6 +22,23 @@ const i18n = {
     pageOverviewTitle: "Server overview",
     pageMetricsEyebrow: "Metrics",
     pageMetricsTitle: "Realtime metrics",
+    pageHistoryEyebrow: "History",
+    pageHistoryTitle: "Historical trends",
+    historyPerfTitle: "Performance Over Time",
+    historyPerfSubtitle: "TPS and MSPT trend from stored samples",
+    historyLoadTitle: "Load Over Time",
+    historyLoadSubtitle: "Players, entities and loaded chunks",
+    historyWindowLabel: "Window",
+    seriesTps: "TPS",
+    seriesMspt: "MSPT",
+    seriesPlayers: "Players",
+    seriesEntities: "Entities",
+    seriesChunks: "Loaded chunks",
+    histMin: "Min TPS",
+    histAvg: "Avg TPS",
+    histMaxMspt: "Max MSPT",
+    histSamples: "Samples",
+    noHistory: "No stored samples yet for this window",
     pageWorldsEyebrow: "Worlds and Chunks",
     pageWorldsTitle: "World and chunk diagnostics",
     pageProfilingEyebrow: "Profiling",
@@ -69,6 +89,9 @@ const i18n = {
     findingsPanelSubtitle: "Rule-based findings for administrators",
     alertsPanelTitle: "Alerts",
     alertsPanelSubtitle: "Channel-aware notifications and history",
+    alertHistoryTitle: "Alert History",
+    alertHistorySubtitle: "Persisted alerts that survive restarts",
+    time: "Time",
     noData: "No data",
     noIssues: "No active issues",
     metric: "Metric",
@@ -108,11 +131,12 @@ const i18n = {
     stateResolved: "RESOLVED"
   },
   ru: {
-    brandEyebrow: "ServerScope MVP",
+    brandEyebrow: "ServerScope",
     brandTitle: "Диагностика",
     brandSubtitle: "Лёгкая observability-панель для серверов Paper и Folia",
     navOverview: "Обзор",
     navMetrics: "Метрики",
+    navHistory: "История",
     navWorlds: "Миры и чанки",
     navProfiling: "Профилирование",
     navFindings: "Диагностика и алерты",
@@ -120,6 +144,23 @@ const i18n = {
     pageOverviewTitle: "Состояние сервера",
     pageMetricsEyebrow: "Метрики",
     pageMetricsTitle: "Метрики в реальном времени",
+    pageHistoryEyebrow: "История",
+    pageHistoryTitle: "Исторические тренды",
+    historyPerfTitle: "Производительность во времени",
+    historyPerfSubtitle: "Тренд TPS и MSPT по сохранённым данным",
+    historyLoadTitle: "Нагрузка во времени",
+    historyLoadSubtitle: "Игроки, сущности и загруженные чанки",
+    historyWindowLabel: "Период",
+    seriesTps: "TPS",
+    seriesMspt: "MSPT",
+    seriesPlayers: "Игроки",
+    seriesEntities: "Сущности",
+    seriesChunks: "Загруж. чанки",
+    histMin: "Мин. TPS",
+    histAvg: "Средн. TPS",
+    histMaxMspt: "Макс. MSPT",
+    histSamples: "Точек",
+    noHistory: "Для этого периода ещё нет сохранённых данных",
     pageWorldsEyebrow: "Миры и чанки",
     pageWorldsTitle: "Диагностика миров и чанков",
     pageProfilingEyebrow: "Профилирование",
@@ -170,6 +211,9 @@ const i18n = {
     findingsPanelSubtitle: "Rule-based выводы для администраторов",
     alertsPanelTitle: "Алерты",
     alertsPanelSubtitle: "История и уведомления по каналам",
+    alertHistoryTitle: "История алертов",
+    alertHistorySubtitle: "Сохранённые алерты, переживающие рестарт",
+    time: "Время",
     noData: "Нет данных",
     noIssues: "Активных проблем нет",
     metric: "Метрика",
@@ -209,11 +253,12 @@ const i18n = {
     stateResolved: "УСТРАНЕНО"
   },
   uk: {
-    brandEyebrow: "ServerScope MVP",
+    brandEyebrow: "ServerScope",
     brandTitle: "Діагностика",
     brandSubtitle: "Легка observability-панель для серверів Paper і Folia",
     navOverview: "Огляд",
     navMetrics: "Метрики",
+    navHistory: "Історія",
     navWorlds: "Світи й чанки",
     navProfiling: "Профілювання",
     navFindings: "Діагностика й алерти",
@@ -221,6 +266,23 @@ const i18n = {
     pageOverviewTitle: "Стан сервера",
     pageMetricsEyebrow: "Метрики",
     pageMetricsTitle: "Метрики в реальному часі",
+    pageHistoryEyebrow: "Історія",
+    pageHistoryTitle: "Історичні тренди",
+    historyPerfTitle: "Продуктивність у часі",
+    historyPerfSubtitle: "Тренд TPS і MSPT за збереженими даними",
+    historyLoadTitle: "Навантаження у часі",
+    historyLoadSubtitle: "Гравці, сутності та завантажені чанки",
+    historyWindowLabel: "Період",
+    seriesTps: "TPS",
+    seriesMspt: "MSPT",
+    seriesPlayers: "Гравці",
+    seriesEntities: "Сутності",
+    seriesChunks: "Завант. чанки",
+    histMin: "Мін. TPS",
+    histAvg: "Сер. TPS",
+    histMaxMspt: "Макс. MSPT",
+    histSamples: "Точок",
+    noHistory: "Для цього періоду ще немає збережених даних",
     pageWorldsEyebrow: "Світи й чанки",
     pageWorldsTitle: "Діагностика світів і чанків",
     pageProfilingEyebrow: "Профілювання",
@@ -271,6 +333,9 @@ const i18n = {
     findingsPanelSubtitle: "Rule-based висновки для адміністраторів",
     alertsPanelTitle: "Алерти",
     alertsPanelSubtitle: "Історія та сповіщення по каналах",
+    alertHistoryTitle: "Історія алертів",
+    alertHistorySubtitle: "Збережені алерти, що переживають рестарт",
+    time: "Час",
     noData: "Немає даних",
     noIssues: "Активних проблем немає",
     metric: "Метрика",
@@ -314,6 +379,7 @@ const i18n = {
 const pageKeys = {
   overview: ["pageOverviewEyebrow", "pageOverviewTitle"],
   metrics: ["pageMetricsEyebrow", "pageMetricsTitle"],
+  history: ["pageHistoryEyebrow", "pageHistoryTitle"],
   worlds: ["pageWorldsEyebrow", "pageWorldsTitle"],
   profiling: ["pageProfilingEyebrow", "pageProfilingTitle"],
   findings: ["pageFindingsEyebrow", "pageFindingsTitle"]
@@ -378,6 +444,11 @@ function applyStaticText() {
   document.getElementById("overviewSlowSubtitle").textContent = t("overviewSlowSubtitle");
   document.getElementById("overviewBurstTitle").textContent = t("overviewBurstTitle");
   document.getElementById("overviewBurstSubtitle").textContent = t("overviewBurstSubtitle");
+  document.getElementById("historyPerfTitle").textContent = t("historyPerfTitle");
+  document.getElementById("historyPerfSubtitle").textContent = t("historyPerfSubtitle");
+  document.getElementById("historyLoadTitle").textContent = t("historyLoadTitle");
+  document.getElementById("historyLoadSubtitle").textContent = t("historyLoadSubtitle");
+  document.getElementById("historyWindowLabel").textContent = t("historyWindowLabel");
   document.getElementById("metricsTitle").textContent = t("metricsPanelTitle");
   document.getElementById("metricsSubtitle").textContent = t("metricsPanelSubtitle");
   document.getElementById("collectorFeedTitle").textContent = t("collectorFeedTitle");
@@ -398,8 +469,11 @@ function applyStaticText() {
   document.getElementById("findingsSubtitle").textContent = t("findingsPanelSubtitle");
   document.getElementById("alertsTitle").textContent = t("alertsPanelTitle");
   document.getElementById("alertsSubtitle").textContent = t("alertsPanelSubtitle");
+  document.getElementById("alertHistoryTitle").textContent = t("alertHistoryTitle");
+  document.getElementById("alertHistorySubtitle").textContent = t("alertHistorySubtitle");
   document.querySelector('.nav-link[data-page="overview"]').textContent = t("navOverview");
   document.querySelector('.nav-link[data-page="metrics"]').textContent = t("navMetrics");
+  document.querySelector('.nav-link[data-page="history"]').textContent = t("navHistory");
   document.querySelector('.nav-link[data-page="worlds"]').textContent = t("navWorlds");
   document.querySelector('.nav-link[data-page="profiling"]').textContent = t("navProfiling");
   document.querySelector('.nav-link[data-page="findings"]').textContent = t("navFindings");
@@ -452,6 +526,16 @@ function renderTable(containerId, columns, rows) {
     return `<td>${renderCellContent(content, column.allowHtml === true)}</td>`;
   }).join("")}</tr>`).join("");
   container.innerHTML = `<table><thead><tr>${header}</tr></thead><tbody>${body}</tbody></table>`;
+}
+
+function skeletonize(ids, rows = 4) {
+  ids.forEach((id) => {
+    const container = document.getElementById(id);
+    // Only show a skeleton on first load, while the container is still empty.
+    if (!container || container.children.length) return;
+    container.innerHTML = `<div class="skeleton-list">${Array.from({ length: rows })
+      .map(() => '<div class="skeleton-row"></div>').join("")}</div>`;
+  });
 }
 
 function metricValue(metric) {
@@ -547,6 +631,7 @@ function renderIssueList(containerId, findings, alerts) {
 }
 
 async function refreshOverview() {
+  skeletonize(["overviewSlowEvents", "overviewBurstEvents", "overviewIssues"]);
   const overview = await api("/api/overview?limit=8");
   renderCards(overview.serverMetrics || {});
   renderMetricBars("overviewHealthBars", [
@@ -571,6 +656,7 @@ async function refreshOverview() {
 }
 
 async function refreshMetrics() {
+  skeletonize(["metricsTable", "metricFeedTable"]);
   const [overview, metrics] = await Promise.all([api("/api/overview"), api("/api/metrics?limit=80")]);
   const serverMetrics = overview.serverMetrics || {};
   renderMetricBars("metricsBars", [
@@ -593,7 +679,174 @@ async function refreshMetrics() {
   ], metrics);
 }
 
+function themeColor(name, fallback) {
+  const value = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+  return value || fallback;
+}
+
+function drawTimeSeriesChart(canvasId, points, series) {
+  const canvas = document.getElementById(canvasId);
+  if (!canvas) return;
+  const wrap = canvas.parentElement;
+  const cssWidth = Math.max(wrap.clientWidth || 320, 220);
+  const cssHeight = 240;
+  const dpr = window.devicePixelRatio || 1;
+  canvas.width = Math.round(cssWidth * dpr);
+  canvas.height = Math.round(cssHeight * dpr);
+  canvas.style.width = cssWidth + "px";
+  canvas.style.height = cssHeight + "px";
+  const ctx = canvas.getContext("2d");
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.clearRect(0, 0, cssWidth, cssHeight);
+  ctx.font = "11px system-ui, sans-serif";
+
+  const gridColor = themeColor("--border", "rgba(111,180,255,0.18)");
+  const textColor = themeColor("--muted", "rgba(145,166,198,0.9)");
+  const hasRight = series.some((s) => s.axis === "right");
+  const pad = { top: 16, right: hasRight ? 46 : 16, bottom: 26, left: 44 };
+  const plotW = cssWidth - pad.left - pad.right;
+  const plotH = cssHeight - pad.top - pad.bottom;
+
+  if (!points.length) {
+    ctx.fillStyle = textColor;
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText(t("noHistory"), cssWidth / 2, cssHeight / 2);
+    return;
+  }
+
+  const times = points.map((p) => new Date(p.time).getTime());
+  const tMin = Math.min(...times);
+  const tMax = Math.max(...times);
+  const tSpan = Math.max(1, tMax - tMin);
+
+  const axes = {};
+  series.forEach((s) => {
+    const axisId = s.axis || "left";
+    const axis = axes[axisId] || (axes[axisId] = { min: Infinity, max: -Infinity });
+    points.forEach((p) => {
+      const v = Number(p[s.key]);
+      if (Number.isNaN(v)) return;
+      axis.min = Math.min(axis.min, v);
+      axis.max = Math.max(axis.max, v);
+    });
+    if (s.fixedMin != null) axis.min = Math.min(axis.min, s.fixedMin);
+    if (s.fixedMax != null) axis.max = Math.max(axis.max, s.fixedMax);
+  });
+  Object.values(axes).forEach((a) => {
+    if (a.min === Infinity) { a.min = 0; a.max = 1; }
+    if (a.min === a.max) { a.max = a.min + 1; }
+    const margin = (a.max - a.min) * 0.08;
+    a.min -= margin;
+    a.max += margin;
+  });
+
+  const xFor = (ts) => pad.left + ((ts - tMin) / tSpan) * plotW;
+  const yFor = (val, axisId) => {
+    const a = axes[axisId || "left"];
+    return pad.top + plotH - ((val - a.min) / (a.max - a.min)) * plotH;
+  };
+
+  const ticks = 4;
+  const leftAxis = axes.left || Object.values(axes)[0];
+  const rightAxis = axes.right;
+  ctx.strokeStyle = gridColor;
+  ctx.lineWidth = 1;
+  ctx.fillStyle = textColor;
+  ctx.textBaseline = "middle";
+  for (let i = 0; i <= ticks; i++) {
+    const y = pad.top + (plotH * i) / ticks;
+    ctx.beginPath();
+    ctx.moveTo(pad.left, y);
+    ctx.lineTo(pad.left + plotW, y);
+    ctx.stroke();
+    ctx.textAlign = "right";
+    const leftVal = leftAxis.max - ((leftAxis.max - leftAxis.min) * i) / ticks;
+    ctx.fillText(leftVal.toFixed(leftVal >= 100 ? 0 : 1), pad.left - 6, y);
+    if (rightAxis) {
+      ctx.textAlign = "left";
+      const rightVal = rightAxis.max - ((rightAxis.max - rightAxis.min) * i) / ticks;
+      ctx.fillText(rightVal.toFixed(rightVal >= 100 ? 0 : 1), pad.left + plotW + 6, y);
+    }
+  }
+
+  ctx.fillStyle = textColor;
+  ctx.textBaseline = "top";
+  ctx.textAlign = "left";
+  ctx.fillText(formatLocalTime(new Date(tMin).toISOString()), pad.left, pad.top + plotH + 8);
+  ctx.textAlign = "right";
+  ctx.fillText(formatLocalTime(new Date(tMax).toISOString()), pad.left + plotW, pad.top + plotH + 8);
+
+  series.forEach((s) => {
+    ctx.strokeStyle = s.color;
+    ctx.lineWidth = 2;
+    ctx.lineJoin = "round";
+    ctx.beginPath();
+    let started = false;
+    points.forEach((p, idx) => {
+      const v = Number(p[s.key]);
+      if (Number.isNaN(v)) return;
+      const x = xFor(times[idx]);
+      const y = yFor(v, s.axis);
+      if (!started) { ctx.moveTo(x, y); started = true; } else { ctx.lineTo(x, y); }
+    });
+    ctx.stroke();
+  });
+}
+
+function renderLegend(containerId, series) {
+  const container = document.getElementById(containerId);
+  if (!container) return;
+  container.innerHTML = series.map((s) =>
+    `<span class="legend-item"><span class="legend-swatch" style="background:${escapeHtml(s.color)}"></span>${escapeHtml(s.label)}</span>`
+  ).join("");
+}
+
+function renderHistoryCharts() {
+  const points = (state.lastHistory && state.lastHistory.points) || [];
+  const summary = document.getElementById("historyPerfSummary");
+  if (summary) {
+    if (points.length) {
+      const tps = points.map((p) => Number(p.tps)).filter((v) => !Number.isNaN(v));
+      const mspt = points.map((p) => Number(p.mspt)).filter((v) => !Number.isNaN(v));
+      const avgTps = tps.length ? tps.reduce((a, b) => a + b, 0) / tps.length : 0;
+      const stats = [
+        [t("histMin"), tps.length ? Math.min(...tps).toFixed(2) : "-"],
+        [t("histAvg"), tps.length ? avgTps.toFixed(2) : "-"],
+        [t("histMaxMspt"), mspt.length ? Math.max(...mspt).toFixed(2) : "-"],
+        [t("histSamples"), String(points.length)]
+      ];
+      summary.innerHTML = stats.map(([label, value]) =>
+        `<div class="history-stat"><span>${escapeHtml(label)}</span><strong>${escapeHtml(value)}</strong></div>`
+      ).join("");
+    } else {
+      summary.innerHTML = "";
+    }
+  }
+
+  const perfSeries = [
+    { key: "tps", label: t("seriesTps"), color: themeColor("--info", "#6df7ca"), axis: "left", fixedMin: 0, fixedMax: 20 },
+    { key: "mspt", label: t("seriesMspt"), color: themeColor("--gold", "#ffbf5f"), axis: "right", fixedMin: 0 }
+  ];
+  drawTimeSeriesChart("historyPerfChart", points, perfSeries);
+  renderLegend("historyPerfLegend", perfSeries);
+
+  const loadSeries = [
+    { key: "onlinePlayers", label: t("seriesPlayers"), color: themeColor("--accent", "#5fd0ff"), axis: "left", fixedMin: 0 },
+    { key: "totalEntities", label: t("seriesEntities"), color: themeColor("--gold", "#ffbf5f"), axis: "right", fixedMin: 0 },
+    { key: "loadedChunks", label: t("seriesChunks"), color: themeColor("--info", "#6df7ca"), axis: "right", fixedMin: 0 }
+  ];
+  drawTimeSeriesChart("historyLoadChart", points, loadSeries);
+  renderLegend("historyLoadLegend", loadSeries);
+}
+
+async function refreshHistory() {
+  state.lastHistory = await api(`/api/history?minutes=${state.historyMinutes}&limit=500`);
+  renderHistoryCharts();
+}
+
 async function refreshWorlds() {
+  skeletonize(["worldsTable", "chunksTable"]);
   const [worlds, chunks] = await Promise.all([api("/api/worlds?limit=20"), api("/api/chunks?limit=20")]);
   renderMetricBars("worldsBars", worlds.map((row) => ({ label: row.world, value: row.loadedChunks })), (value) => value);
   renderTable("worldsTable", [
@@ -615,6 +868,7 @@ async function refreshWorlds() {
 }
 
 async function refreshProfiling() {
+  skeletonize(["profilingPluginsTable", "profilingFrequentTable", "profilingSlowTable", "profilingBurstTable"]);
   const profile = await api("/api/profiling?limit=12");
   renderMetricBars("profilingPluginsBars", (profile.topPlugins || []).map((row) => ({ label: row.pluginName, value: row.attributedTotalTimeNanos / 1_000_000 })), (value) => `${Number(value).toFixed(1)} ms`);
   renderTable("profilingPluginsTable", [
@@ -644,7 +898,12 @@ async function refreshProfiling() {
 }
 
 async function refreshFindings() {
-  const [findings, alerts] = await Promise.all([api("/api/findings?limit=20"), api("/api/alerts?limit=20")]);
+  skeletonize(["findingsTable", "alertsTable", "alertHistoryTable"]);
+  const [findings, alerts, alertHistory] = await Promise.all([
+    api("/api/findings?limit=20"),
+    api("/api/alerts?limit=20"),
+    api("/api/alerts/history?limit=30")
+  ]);
   renderTable("findingsTable", [
     { label: t("severity"), render: (row) => severityPill(row.severity), allowHtml: true },
     { label: t("finding"), render: (row) => row.title },
@@ -657,6 +916,13 @@ async function refreshFindings() {
     { label: t("status"), render: (row) => translateStatus(row.status) },
     { label: t("message"), render: (row) => row.message }
   ], alerts);
+  renderTable("alertHistoryTable", [
+    { label: t("time"), render: (row) => formatLocalTime(row.occurredAt) },
+    { label: t("severity"), render: (row) => severityPill(row.severity), allowHtml: true },
+    { label: t("code"), render: (row) => row.code },
+    { label: t("status"), render: (row) => translateStatus(row.status) },
+    { label: t("message"), render: (row) => row.message }
+  ], alertHistory);
 }
 
 function formatLabels(labels) {
@@ -665,14 +931,19 @@ function formatLabels(labels) {
   return entries.map(([key, value]) => `${key}=${value}`).join(", ");
 }
 
+const loadingBar = document.getElementById("loadingBar");
+
 async function refreshCurrentPage() {
   try {
+    if (loadingBar) loadingBar.classList.add("active");
     connectionState.textContent = t("statusRefreshing");
     connectionState.className = "status-pill idle";
     if (state.activePage === "overview") {
       await refreshOverview();
     } else if (state.activePage === "metrics") {
       await refreshMetrics();
+    } else if (state.activePage === "history") {
+      await refreshHistory();
     } else if (state.activePage === "worlds") {
       await refreshWorlds();
     } else if (state.activePage === "profiling") {
@@ -688,18 +959,43 @@ async function refreshCurrentPage() {
     connectionState.textContent = t("statusError");
     connectionState.className = "status-pill error";
     globalMessage.textContent = error.message;
+  } finally {
+    if (loadingBar) loadingBar.classList.remove("active");
   }
 }
 
 saveTokenButton.addEventListener("click", () => {
   state.token = tokenInput.value.trim();
+  if (state.token) {
+    localStorage.setItem("serverscopeToken", state.token);
+  } else {
+    localStorage.removeItem("serverscopeToken");
+  }
   refreshCurrentPage();
 });
 
 clearTokenButton.addEventListener("click", () => {
   state.token = "";
   tokenInput.value = "";
+  localStorage.removeItem("serverscopeToken");
   refreshCurrentPage();
+});
+
+const historyWindowSelect = document.getElementById("historyWindow");
+if (historyWindowSelect) {
+  historyWindowSelect.value = String(state.historyMinutes);
+  historyWindowSelect.addEventListener("change", () => {
+    state.historyMinutes = Number(historyWindowSelect.value) || 30;
+    localStorage.setItem("serverscopeHistoryMinutes", String(state.historyMinutes));
+    refreshCurrentPage();
+  });
+}
+
+let historyResizeTimer = null;
+window.addEventListener("resize", () => {
+  if (state.activePage !== "history") return;
+  window.clearTimeout(historyResizeTimer);
+  historyResizeTimer = window.setTimeout(renderHistoryCharts, 150);
 });
 
 localeSelect.addEventListener("change", () => {

@@ -70,6 +70,41 @@ public final class SqliteMetricSampleRepository {
         }
     }
 
+    public List<MetricSample> findSince(Connection connection, Instant since, int limit) throws SQLException {
+        // Pull the most recent `limit` rows within the window (uses idx_metric_samples_time),
+        // then re-order ascending so callers get a ready-to-plot time series.
+        try (PreparedStatement statement = connection.prepareStatement("""
+                SELECT sample_time, tps, mspt, heap_used_bytes, online_players, world_count, loaded_chunks, total_entities
+                FROM (
+                    SELECT sample_time, tps, mspt, heap_used_bytes, online_players, world_count, loaded_chunks, total_entities
+                    FROM metric_samples
+                    WHERE sample_time >= ?
+                    ORDER BY sample_time DESC
+                    LIMIT ?
+                )
+                ORDER BY sample_time ASC
+                """)) {
+            statement.setLong(1, since.toEpochMilli());
+            statement.setInt(2, limit);
+            try (ResultSet resultSet = statement.executeQuery()) {
+                List<MetricSample> result = new ArrayList<>();
+                while (resultSet.next()) {
+                    result.add(new MetricSample(
+                            Instant.ofEpochMilli(resultSet.getLong("sample_time")),
+                            resultSet.getDouble("tps"),
+                            resultSet.getDouble("mspt"),
+                            resultSet.getLong("heap_used_bytes"),
+                            resultSet.getInt("online_players"),
+                            resultSet.getInt("world_count"),
+                            resultSet.getLong("loaded_chunks"),
+                            resultSet.getLong("total_entities")
+                    ));
+                }
+                return result;
+            }
+        }
+    }
+
     public int deleteOlderThan(Connection connection, Instant cutoff) throws SQLException {
         try (PreparedStatement statement = connection.prepareStatement(
                 "DELETE FROM metric_samples WHERE sample_time < ?"

@@ -1,6 +1,6 @@
-![Platform](https://img.shields.io/badge/platform-Paper%20%7C%20Spigot%20%7C%20Folia-green.svg)
-![Java](https://img.shields.io/badge/java-21%2B-orange.svg)
-![Version minecraft](https://img.shields.io/badge/Version_Minecraft_1.21+-red.svg)
+![Platform](https://img.shields.io/badge/platform-Paper%20%7C%20Folia-green.svg)
+![Java](https://img.shields.io/badge/java-17%2B-orange.svg)
+![Version minecraft](https://img.shields.io/badge/Version_Minecraft_1.18_--_26.x-red.svg)
 [![Support me](https://img.shields.io/badge/Support%20me-Ko--fi-ff5f5f?style=for-the-badge&logo=ko-fi&logoColor=white)](https://ko-fi.com/erotoro)
 
 # ServerScope
@@ -26,6 +26,7 @@ It helps you answer questions like:
 
 Main features:
 - live server metrics
+- historical trends and charts (TPS, MSPT, players, entities, chunks)
 - chunk and world diagnostics
 - basic event and plugin profiling
 - alert system
@@ -38,8 +39,28 @@ Main features:
 
 ## Requirements
 
-- Java 21 or newer
-- Paper 1.21+ or Folia 1.21+
+- Java 17 or newer (use the Java version your Minecraft release itself requires — Java 17 for 1.18–1.20.4, Java 21 for 1.20.5–1.21.x, Java 25 for 26.x)
+- Paper or Folia, Minecraft 1.18 up to the current 26.x line
+
+### Compatibility
+
+ServerScope reads runtime data (TPS, MSPT, chunk and entity counts, Folia schedulers)
+through reflection with safe fallbacks, so a single build runs across the whole supported
+range without version-specific jars.
+
+| Minecraft | Status |
+| --- | --- |
+| 1.18.2 | Supported target |
+| 1.20.4 | Supported target |
+| 1.20.6 | Supported target |
+| 1.21.4 / 1.21.11 | Supported target |
+| 26.x (year-based) | Supported target |
+| other 1.18+ releases | Best-effort support (same stable API surface) |
+
+The plugin is compiled to Java 17 bytecode, so 1.18 is the lowest supported Minecraft
+version (it is the oldest release that runs on Java 17). Older versions (1.16 needs Java 8,
+1.17 needs Java 16) would require dropping the modern code base and are intentionally not
+supported.
 
 ---
 
@@ -307,6 +328,29 @@ What they do:
 
 ---
 
+## History And Trends
+
+The dashboard includes a **History** page that turns the stored server-health samples into time-series charts:
+- TPS and MSPT over time
+- players, entities and loaded chunks over time
+- min/avg TPS and max MSPT summary for the selected window
+
+Pick the time window (15m, 30m, 1h, 3h, 12h, 24h) from the selector. The data is read back from SQLite, so charts survive restarts as long as the samples are within the retention period.
+
+The same data is available over the JSON API:
+
+```text
+GET /api/history?minutes=30&limit=500
+```
+
+- `minutes`: window size in minutes (1–1440, default 30)
+- `limit`: maximum number of points (default 100, max 500)
+- requires the same auth token as the rest of the API
+
+If storage is disabled, the endpoint returns an empty point list instead of failing.
+
+---
+
 ## Permissions
 
 - `serverscope.admin`
@@ -366,6 +410,25 @@ Current behavior:
 - repeated spam was reduced
 
 This is intentional so that admins are not flooded in chat by low-quality warnings.
+
+Alerts are also persisted to storage, so the dashboard shows an **Alert History** panel that
+survives restarts. The same data is available over the API:
+
+```text
+GET /api/alerts/history?limit=30&severity=WARN&status=ACTIVE
+```
+
+If storage is disabled the endpoint simply returns an empty list.
+
+---
+
+## Safe Reload
+
+`/serverscope reload` (and `/serverscope web regenerate-token`) apply config changes with a
+rollback safety net: if the new configuration fails to start, ServerScope restores the previous
+working runtime instead of disabling the plugin. A bad config edit no longer takes your
+monitoring offline — you get a warning in chat and the console, and the last good setup keeps
+running.
 
 ---
 
@@ -503,6 +566,7 @@ ServerScope это плагин мониторинга и observability для M
 
 Основные функции:
 - живые метрики сервера
+- исторические тренды и графики (TPS, MSPT, игроки, сущности, чанки)
 - диагностика миров и чанков
 - базовое профилирование событий и плагинов
 - система alert-ов
@@ -515,8 +579,27 @@ ServerScope это плагин мониторинга и observability для M
 
 ## Требования
 
-- Java 21 или новее
-- Paper 1.21+ или Folia 1.21+
+- Java 17 или новее (используй ту Java, которую требует твоя версия Minecraft — Java 17 для 1.18–1.20.4, Java 21 для 1.20.5–1.21.x, Java 25 для 26.x)
+- Paper или Folia, Minecraft 1.18 до текущей линейки 26.x
+
+### Совместимость
+
+ServerScope читает рантайм-данные (TPS, MSPT, счётчики чанков и сущностей, планировщики Folia)
+через рефлексию с безопасными fallback-ами, поэтому один и тот же сборочный jar работает на всём
+поддерживаемом диапазоне без отдельных сборок под версию.
+
+| Minecraft | Статус |
+| --- | --- |
+| 1.18.2 | Поддерживаемая цель |
+| 1.20.4 | Поддерживаемая цель |
+| 1.20.6 | Поддерживаемая цель |
+| 1.21.4 / 1.21.11 | Поддерживаемая цель |
+| 26.x (year-based) | Поддерживаемая цель |
+| прочие 1.18+ релизы | Поддержка по возможности (тот же стабильный API) |
+
+Плагин компилируется в байткод Java 17, поэтому 1.18 — нижняя поддерживаемая версия (это самый
+старый релиз на Java 17). Более старые (1.16 требует Java 8, 1.17 — Java 16) потребовали бы отказа
+от современной кодовой базы и сознательно не поддерживаются.
 
 ---
 
@@ -783,6 +866,29 @@ server {
 
 ---
 
+## История и тренды
+
+В панели есть страница **История**, которая превращает сохранённые снимки состояния сервера в графики во времени:
+- TPS и MSPT во времени
+- игроки, сущности и загруженные чанки во времени
+- сводка по выбранному периоду: мин./средн. TPS и макс. MSPT
+
+Период выбирается селектором (15м, 30м, 1ч, 3ч, 12ч, 24ч). Данные читаются обратно из SQLite, поэтому графики переживают перезапуск сервера, пока точки не вышли за период хранения (retention).
+
+Те же данные доступны через JSON API:
+
+```text
+GET /api/history?minutes=30&limit=500
+```
+
+- `minutes`: размер окна в минутах (1–1440, по умолчанию 30)
+- `limit`: максимум точек (по умолчанию 100, максимум 500)
+- требует тот же auth-токен, что и остальной API
+
+Если storage выключен, эндпоинт возвращает пустой список точек, а не ошибку.
+
+---
+
 ## Права
 
 - `serverscope.admin`
@@ -842,6 +948,24 @@ Alerts это уведомления, которые создаёт анализ
 - спам повторяющихся сообщений сильно уменьшен
 
 Это сделано специально, чтобы чат админов не засыпало мусором.
+
+Алерты также сохраняются в storage, поэтому в панели есть блок **История алертов**, который
+переживает рестарт. Те же данные доступны через API:
+
+```text
+GET /api/alerts/history?limit=30&severity=WARN&status=ACTIVE
+```
+
+Если storage выключен, эндпоинт просто возвращает пустой список.
+
+---
+
+## Безопасная перезагрузка
+
+`/serverscope reload` (и `/serverscope web regenerate-token`) применяют изменения конфига с
+защитным откатом: если новый конфиг не стартует, ServerScope восстанавливает предыдущий рабочий
+runtime, а не отключает плагин целиком. Опечатка в конфиге больше не кладёт мониторинг — ты
+получаешь предупреждение в чат и консоль, а последняя рабочая конфигурация продолжает работать.
 
 ---
 

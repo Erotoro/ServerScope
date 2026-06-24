@@ -6,6 +6,7 @@ import com.serverscope.api.lifecycle.ComponentStatus;
 import com.serverscope.core.i18n.TranslationService;
 import org.junit.jupiter.api.Test;
 
+import java.util.logging.Handler;
 import java.util.logging.Logger;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
@@ -16,9 +17,9 @@ class WebModuleTest {
     @Test
     void startMarksModuleFailedWhenEmbeddedServerCannotStart() {
         WebModule module = new WebModule(
-                Logger.getLogger("test"),
+                quietLogger("test.web.module"),
                 new WebConfig(true, "127.0.0.1", 8080, "secret-token", false, "", false, 60, 10_000L, 2048, 1_048_576),
-                new TranslationService(Logger.getLogger("test-i18n"), new LocalizationConfig("en", false)),
+                new TranslationService(quietLogger("test.web.module.i18n"), new LocalizationConfig("en", false)),
                 new FailingWebServer()
         );
 
@@ -36,5 +37,14 @@ class WebModuleTest {
         @Override
         public void stop() {
         }
+    }
+
+    private static Logger quietLogger(String name) {
+        Logger logger = Logger.getLogger(name);
+        logger.setUseParentHandlers(false);
+        for (Handler handler : logger.getHandlers()) {
+            logger.removeHandler(handler);
+        }
+        return logger;
     }
 }

@@ -53,7 +53,9 @@ public final class PluginWiringFactory {
                 collectorsModule::latestBatches,
                 collectorsModule::profilerSnapshot,
                 analyzerModule::activeAlerts,
-                analyzerModule::activeFindings
+                analyzerModule::activeFindings,
+                storageModule,
+                storageModule
         );
 
         List<ManagedComponent> components = List.of(

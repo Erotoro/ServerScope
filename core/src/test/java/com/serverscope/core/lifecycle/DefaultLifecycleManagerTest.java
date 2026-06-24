@@ -8,6 +8,7 @@ import org.junit.jupiter.api.Test;
 import java.time.Instant;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.logging.Handler;
 import java.util.logging.Logger;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
@@ -21,7 +22,7 @@ class DefaultLifecycleManagerTest {
         StubComponent degraded = StubComponent.failedButTolerated("web");
 
         DefaultLifecycleManager manager = new DefaultLifecycleManager(
-                Logger.getLogger("test"),
+                quietLogger("test.lifecycle.degraded"),
                 List.of(strictRunning, degraded)
         );
 
@@ -35,7 +36,7 @@ class DefaultLifecycleManagerTest {
         StubComponent strictFailed = StubComponent.failed("analyzer");
 
         DefaultLifecycleManager manager = new DefaultLifecycleManager(
-                Logger.getLogger("test"),
+                quietLogger("test.lifecycle.strict"),
                 List.of(strictRunning, strictFailed)
         );
 
@@ -95,5 +96,14 @@ class DefaultLifecycleManagerTest {
         public boolean toleratesDegradedStartup() {
             return tolerateDegradedStartup;
         }
+    }
+
+    private static Logger quietLogger(String name) {
+        Logger logger = Logger.getLogger(name);
+        logger.setUseParentHandlers(false);
+        for (Handler handler : logger.getHandlers()) {
+            logger.removeHandler(handler);
+        }
+        return logger;
     }
 }

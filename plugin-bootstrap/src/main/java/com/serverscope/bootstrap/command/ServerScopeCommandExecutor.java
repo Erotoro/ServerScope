@@ -151,7 +151,7 @@ public final class ServerScopeCommandExecutor implements CommandExecutor, TabCom
         sender.sendMessage(line(t("command.label.active_findings"), Integer.toString(findings.size()), findings.isEmpty() ? NamedTextColor.GREEN : NamedTextColor.YELLOW));
 
         if (!alerts.isEmpty()) {
-            AlertRecord topAlert = alerts.getFirst();
+            AlertRecord topAlert = alerts.get(0);
             sender.sendMessage(line(t("command.label.top_alert"), topAlert.code() + " - " + topAlert.message(), severityColor(topAlert.severity().name())));
         }
 
@@ -159,7 +159,7 @@ public final class ServerScopeCommandExecutor implements CommandExecutor, TabCom
             sender.sendMessage(line(t("command.label.top_finding"), topFinding.title(), findingColor(topFinding.severity())));
         }
         if (profiler != null && !profiler.topSlowEvents().isEmpty()) {
-            var topEvent = profiler.topSlowEvents().getFirst();
+            var topEvent = profiler.topSlowEvents().get(0);
             sender.sendMessage(line(t("command.label.slowest_event"), t("command.value.slowest_event", Map.of(
                             "eventId", topEvent.eventId(),
                             "avgMs", nanosToMillis(topEvent.averageTimeNanos())
@@ -168,7 +168,7 @@ public final class ServerScopeCommandExecutor implements CommandExecutor, TabCom
         }
 
         if (profiler != null && !profiler.topPlugins().isEmpty()) {
-            var topPlugin = profiler.topPlugins().getFirst();
+            var topPlugin = profiler.topPlugins().get(0);
             sender.sendMessage(line(t("command.label.heaviest_plugin"), t("command.value.heaviest_plugin", Map.of(
                     "plugin", topPlugin.pluginName(),
                     "totalMs", nanosToMillis(topPlugin.attributedTotalTimeNanos())

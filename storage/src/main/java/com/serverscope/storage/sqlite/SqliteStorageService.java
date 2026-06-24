@@ -9,6 +9,7 @@ import com.serverscope.api.storage.MetricSample;
 import com.serverscope.api.storage.PluginProfileSnapshot;
 import com.serverscope.api.storage.StorageService;
 import com.serverscope.api.storage.WorldSnapshot;
+import com.serverscope.core.concurrent.NamedThreadFactory;
 import com.serverscope.storage.sqlite.migration.SqliteMigrationRunner;
 import com.serverscope.storage.sqlite.repository.SqliteAlertRepository;
 import com.serverscope.storage.sqlite.repository.SqliteAnalyzerFindingRepository;
@@ -101,7 +102,9 @@ public final class SqliteStorageService implements StorageService {
         flushRequested = false;
         retentionCleanupRequested = false;
         initializationFailure.set(null);
-        workerThread = Thread.ofPlatform().name("serverscope-storage-writer").daemon(false).start(this::runWriterLoop);
+        Thread writer = NamedThreadFactory.newWorkerThread("serverscope-storage-writer", this::runWriterLoop);
+        writer.start();
+        workerThread = writer;
         awaitInitializationOrThrow();
     }
 
@@ -188,6 +191,19 @@ public final class SqliteStorageService implements StorageService {
             return metricRepository.findLatest(connection, limit);
         } catch (SQLException exception) {
             throw new IllegalStateException("Failed to query metric samples", exception);
+        }
+    }
+
+    @Override
+    public List<MetricSample> findMetricSamplesSince(Instant since, int limit) {
+        if (!config.enabled()) {
+            return List.of();
+        }
+        awaitInitialization();
+        try (Connection connection = connectionFactory.openConnection()) {
+            return metricRepository.findSince(connection, since, limit);
+        } catch (SQLException exception) {
+            throw new IllegalStateException("Failed to query metric sample history", exception);
         }
     }
 

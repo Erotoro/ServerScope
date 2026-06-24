@@ -5,6 +5,7 @@ import com.serverscope.api.collector.CollectorExecutionMode;
 import com.serverscope.api.collector.CollectorRegistry;
 import com.serverscope.api.collector.MetricCollector;
 import com.serverscope.api.metric.MetricBatch;
+import com.serverscope.core.concurrent.NamedThreadFactory;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.time.Clock;
@@ -15,6 +16,7 @@ import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -32,8 +34,9 @@ public final class CollectorExecutionService {
         Objects.requireNonNull(plugin, "plugin");
         this.logger = Objects.requireNonNull(logger, "logger");
         this.collectorRegistry = Objects.requireNonNull(collectorRegistry, "collectorRegistry");
+        ThreadFactory asyncThreadFactory = NamedThreadFactory.daemonNumbered("serverscope-collector-async");
         this.asyncExecutor = Executors.newScheduledThreadPool(2, runnable -> {
-            Thread thread = Thread.ofPlatform().name("serverscope-collector-async", 0).daemon(true).unstarted(runnable);
+            Thread thread = asyncThreadFactory.newThread(runnable);
             thread.setUncaughtExceptionHandler((ignored, throwable) ->
                     this.logger.log(Level.SEVERE, "Unhandled collector async failure", throwable));
             return thread;
