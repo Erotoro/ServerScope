@@ -26,8 +26,15 @@ public final class DefaultLifecycleManager implements LifecycleManager {
             try {
                 logger.info(() -> "Starting component " + component.name());
                 component.start();
-                if (component.health().status() != ComponentStatus.RUNNING) {
-                    throw new IllegalStateException("Component " + component.name() + " did not reach RUNNING state");
+                ComponentStatus status = component.health().status();
+                boolean acceptable = status == ComponentStatus.RUNNING
+                        || status == ComponentStatus.FAILED && component.toleratesDegradedStartup();
+                if (!acceptable) {
+                    throw new IllegalStateException("Component " + component.name() + " did not reach an acceptable startup state");
+                }
+                if (status == ComponentStatus.FAILED) {
+                    logger.warning(() -> "Component " + component.name()
+                            + " started in degraded mode: " + component.health().details());
                 }
                 started.add(component);
             } catch (RuntimeException exception) {
