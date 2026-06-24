@@ -9,6 +9,12 @@ import com.serverscope.api.diagnostic.DiagnosticFinding;
 import com.serverscope.api.metric.MetricBatch;
 import com.serverscope.api.metric.MetricSample;
 import com.serverscope.api.profile.ProfilerSnapshot;
+import com.serverscope.api.storage.AlertRepository;
+import com.serverscope.api.storage.MetricSampleRepository;
+import com.serverscope.web.api.AlertHistoryItemResponse;
+import com.serverscope.web.api.HistoryPointResponse;
+import com.serverscope.web.api.HistoryResponse;
+import com.serverscope.core.concurrent.NamedThreadFactory;
 import com.serverscope.core.i18n.TranslationService;
 import com.serverscope.core.security.SecretMasker;
 import com.serverscope.web.api.ApiEnvelope;
@@ -45,9 +51,11 @@ import java.util.function.Supplier;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-public final class ServerScopeHttpServer {
+public final class ServerScopeHttpServer implements WebServerControl {
     private static final int DEFAULT_QUERY_LIMIT = 100;
     private static final int MAX_QUERY_LIMIT = 500;
+    private static final int DEFAULT_HISTORY_MINUTES = 30;
+    private static final int MAX_HISTORY_MINUTES = 1440;
     private static final int MAX_STATIC_RESOURCE_BYTES = 262_144;
     private static final int GLOBAL_REQUEST_BUDGET_MULTIPLIER = 4;
     private static final String CONTENT_SECURITY_POLICY = "default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self'; img-src 'self' data:; object-src 'none'; base-uri 'none'; frame-ancestors 'none'";
@@ -59,6 +67,8 @@ public final class ServerScopeHttpServer {
     private final Supplier<ProfilerSnapshot> profilerSnapshotSupplier;
     private final Supplier<List<AlertRecord>> activeAlertsSupplier;
     private final Supplier<List<DiagnosticFinding>> activeFindingsSupplier;
+    private final MetricSampleRepository historyRepository;
+    private final AlertRepository alertHistoryRepository;
     private final ObjectMapper objectMapper;
     private final Object rateLimitLock = new Object();
     private final Map<String, FixedWindowCounter> perIpCounters = new LinkedHashMap<>();
@@ -74,7 +84,9 @@ public final class ServerScopeHttpServer {
             Supplier<Map<String, MetricBatch>> batchesSupplier,
             Supplier<ProfilerSnapshot> profilerSnapshotSupplier,
             Supplier<List<AlertRecord>> activeAlertsSupplier,
-            Supplier<List<DiagnosticFinding>> activeFindingsSupplier
+            Supplier<List<DiagnosticFinding>> activeFindingsSupplier,
+            MetricSampleRepository historyRepository,
+            AlertRepository alertHistoryRepository
     ) {
         this.logger = Objects.requireNonNull(logger, "logger");
         this.config = Objects.requireNonNull(config, "config");
@@ -83,6 +95,8 @@ public final class ServerScopeHttpServer {
         this.profilerSnapshotSupplier = Objects.requireNonNull(profilerSnapshotSupplier, "profilerSnapshotSupplier");
         this.activeAlertsSupplier = Objects.requireNonNull(activeAlertsSupplier, "activeAlertsSupplier");
         this.activeFindingsSupplier = Objects.requireNonNull(activeFindingsSupplier, "activeFindingsSupplier");
+        this.historyRepository = Objects.requireNonNull(historyRepository, "historyRepository");
+        this.alertHistoryRepository = Objects.requireNonNull(alertHistoryRepository, "alertHistoryRepository");
         this.objectMapper = new ObjectMapper()
                 .registerModule(new JavaTimeModule())
                 .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
@@ -96,19 +110,21 @@ public final class ServerScopeHttpServer {
         ExecutorService executorService = null;
         try {
             httpServer = HttpServer.create(new InetSocketAddress(config.host(), config.port()), 0);
-            executorService = Executors.newFixedThreadPool(4, runnable ->
-                    Thread.ofPlatform().name("serverscope-web", 0).daemon(true).unstarted(runnable));
+            executorService = Executors.newFixedThreadPool(4,
+                    NamedThreadFactory.daemonNumbered("serverscope-web"));
             httpServer.setExecutor(executorService);
             httpServer.createContext("/", this::handleStatic);
             httpServer.createContext("/assets/", this::handleStatic);
             httpServer.createContext("/health", withJson(true, this::health));
             httpServer.createContext("/api/overview", withJson(true, this::overview));
+            httpServer.createContext("/api/history", withJson(true, this::history));
             httpServer.createContext("/api/metrics", withJson(true, this::metrics));
             httpServer.createContext("/api/worlds", withJson(true, this::worlds));
             httpServer.createContext("/api/chunks", withJson(true, this::chunks));
             httpServer.createContext("/api/profiling", withJson(true, this::profiling));
             httpServer.createContext("/api/plugins", withJson(true, this::profiling));
             httpServer.createContext("/api/findings", withJson(true, this::findings));
+            httpServer.createContext("/api/alerts/history", withJson(true, this::alertHistory));
             httpServer.createContext("/api/alerts", withJson(true, this::alerts));
             httpServer.start();
             this.executor = executorService;
@@ -242,6 +258,26 @@ public final class ServerScopeHttpServer {
         );
     }
 
+    private HistoryResponse history(HttpExchange exchange) {
+        int minutes = queryMinutes(exchange);
+        int limit = queryLimit(exchange);
+        Instant since = Instant.now().minus(java.time.Duration.ofMinutes(minutes));
+
+        List<HistoryPointResponse> points = historyRepository.findMetricSamplesSince(since, limit).stream()
+                .map(sample -> new HistoryPointResponse(
+                        sample.sampleTime(),
+                        sample.tps(),
+                        sample.mspt(),
+                        sample.heapUsedBytes(),
+                        sample.onlinePlayers(),
+                        sample.worldCount(),
+                        sample.loadedChunks(),
+                        sample.totalEntities()
+                ))
+                .toList();
+        return new HistoryResponse(Instant.now(), since, minutes, points);
+    }
+
     private List<MetricItemResponse> metrics(HttpExchange exchange) {
         String collectorIdFilter = queryParam(exchange.getRequestURI(), "collectorId");
         String metricTypeFilter = queryParam(exchange.getRequestURI(), "metricType");
@@ -364,6 +400,24 @@ public final class ServerScopeHttpServer {
                 .toList();
     }
 
+    private List<AlertHistoryItemResponse> alertHistory(HttpExchange exchange) {
+        int limit = queryLimit(exchange);
+        String severity = queryParam(exchange.getRequestURI(), "severity");
+        String status = queryParam(exchange.getRequestURI(), "status");
+        return alertHistoryRepository.findLatestAlerts(limit).stream()
+                .filter(item -> severity == null || item.severity().name().equalsIgnoreCase(severity))
+                .filter(item -> status == null || item.status().name().equalsIgnoreCase(status))
+                .map(item -> new AlertHistoryItemResponse(
+                        item.eventTime(),
+                        item.alertCode(),
+                        item.severity().name(),
+                        item.status().name(),
+                        item.dedupeKey(),
+                        item.message()
+                ))
+                .toList();
+    }
+
     private Map<String, MetricValueResponse> flattenServerMetrics(Map<String, MetricBatch> batches) {
         Map<String, MetricValueResponse> result = new LinkedHashMap<>();
         for (MetricBatch batch : batches.values()) {
@@ -453,6 +507,22 @@ public final class ServerScopeHttpServer {
         exchange.getResponseHeaders().set("Access-Control-Allow-Origin", config.corsAllowedOrigin());
         exchange.getResponseHeaders().set("Access-Control-Allow-Headers", "Authorization, X-ServerScope-Token, Content-Type");
         exchange.getResponseHeaders().set("Access-Control-Allow-Methods", "GET, OPTIONS");
+    }
+
+    private int queryMinutes(HttpExchange exchange) {
+        String value = queryParam(exchange.getRequestURI(), "minutes");
+        if (value == null || value.isBlank()) {
+            return DEFAULT_HISTORY_MINUTES;
+        }
+        try {
+            int parsed = Integer.parseInt(value);
+            if (parsed <= 0) {
+                throw new IllegalArgumentException("Query param 'minutes' must be positive");
+            }
+            return Math.min(parsed, MAX_HISTORY_MINUTES);
+        } catch (NumberFormatException exception) {
+            throw new IllegalArgumentException("Query param 'minutes' must be a valid integer");
+        }
     }
 
     private int queryLimit(HttpExchange exchange) {
