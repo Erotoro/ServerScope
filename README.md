@@ -67,7 +67,7 @@ supported.
 ## How To Install
 
 1. Download the ready release jar.
-2. Put `ServerScope-1.0.0.jar` into your server `plugins/` folder.
+2. Put `ServerScope-1.1.0.jar` into your server `plugins/` folder.
 3. Start the server.
 4. Wait until ServerScope creates its folder and config.
 5. Stop the server if you want to review the config first.
@@ -606,7 +606,7 @@ ServerScope читает рантайм-данные (TPS, MSPT, счётчик�
 ## Как установить
 
 1. Скачай готовый release jar.
-2. Положи `ServerScope-1.0.0.jar` в папку `plugins/`.
+2. Положи `ServerScope-1.1.0.jar` в папку `plugins/`.
 3. Запусти сервер.
 4. Дождись, пока ServerScope создаст свою папку и конфиг.
 5. При желании останови сервер и открой конфиг.
